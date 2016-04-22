@@ -23,7 +23,7 @@ void loadData(int* totalResources, int* processes) {
 	if (data[length] != ',') {
 		*totalResources = *totalResources + 1;
 	}//end if statement
-}//end function
+}//end loadData function
 
 void loadResources(int* totalResources, int* processes, int* available, int** allocation) {
 	ifstream readFile;
@@ -47,7 +47,7 @@ void loadResources(int* totalResources, int* processes, int* available, int** al
 	if (data[length] != ',') {
 		available[position] = atoi(resource.c_str());
 	}//end if statement
-}//end readFile function
+}//end loadResources function
 
 int main() {
 	int totalResources = 0;
