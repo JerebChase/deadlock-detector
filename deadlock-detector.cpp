@@ -47,6 +47,33 @@ void loadResources(int* totalResources, int* processes, int* available, int** al
 	if (data[length] != ',') {
 		available[position] = atoi(resource.c_str());
 	}//end if statement
+	int k = 0;
+	bool keepGoing = true;
+	resource = "";
+	for (int i = 0; i < *processes; i++) {
+		k = 0;
+		getline(readFile, data);
+		for (int j = 0; j < *totalResources; j++) {
+			while (keepGoing) {
+				if (data[k] == ',') {
+					allocation[i][j] = atoi(resource.c_str());
+					resource = "";
+					k++;
+					keepGoing = false;
+				}//end if statement
+				else if (k == data.length()) {
+					resource += data[k];
+					allocation[i][j] = atoi(resource.c_str());
+					keepGoing = false;
+				}//end else if statement
+				else if (data[k] != ',') {
+					resource += data[k];
+					k++;
+				}//end else if statement
+			}//end while loop
+			keepGoing = true;
+		}//end for loop
+	}//end for loop
 }//end loadResources function
 
 int main() {
@@ -70,6 +97,14 @@ int main() {
 	cout << "Available resources: ";
 	for (int i = 0; i < totalResources; i++) {
 		cout << available[i] << ", ";
+	}//end for loop
+	cout << endl;
+	cout << "Resource Allocation: " << endl;
+	for (int i = 0; i < processes; i++) {
+		for (int j = 0; j < totalResources; j++) {
+			cout << allocation[i][j] << ", ";
+		}//end for loop
+		cout << endl;
 	}//end for loop
 	return 0;
 }//end main function
