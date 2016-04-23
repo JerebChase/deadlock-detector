@@ -7,6 +7,46 @@
 
 using namespace std;
 
+bool isLessThan(int* totalResources, int* request, int* predict) {
+	bool keepGoing = true;
+	bool isLess = true;
+	int i = 0;
+	while (keepGoing) {
+		if (i == *totalResources) {
+			keepGoing = false;
+		}//end if statement
+		else if (request[i] <= predict[i]) {
+			i++;
+		}//end if statement
+		else if (request[i] > predict[i]) {
+			keepGoing = false;
+			isLess = false;
+		}//end else if statement
+	}//end while loop
+	return isLess;
+}//end isLessThan function
+
+bool isFinished(int* totalResources, int* allocate) {
+	bool keepGoing = true;
+	bool isZero = true;
+	int sum = 0;
+	int i = 0;
+	while (keepGoing) {
+		sum += allocate[i];
+		if (i == *totalResources) {
+			keepGoing = false;
+		}//end if statement
+		else if (sum == 0) {
+			i++;
+		}//end else if statement
+		else if (sum > 0) {
+			keepGoing = false;
+			isZero = false;
+		}//end else if statement
+	}//end while loop
+	return isZero;
+}//end isFinished function
+
 void updateAvailable(int* totalResources, int* available, int* request) {
 	for (int i = 0; i < *totalResources; i++) {
 		available[i] = available[i] - request[i];
@@ -92,17 +132,49 @@ void loadResources(int* totalResources, int* processes, int* available, int** al
 	}//end for loop
 }//end loadResources function
 
-void loadRequests(int* totalResources, int* processes, int** allocation, int** totalRequest, int* predict, int* request, bool* finish) {
+void loadRequests(int* totalResources, int* processes, int* available, int** totalAllocation, int** totalRequest, int* predict, int* allocate, int* request, bool* finish) {
+	int counter = 0;
 	ifstream readFile;
         string data;
         string resource = "";
         readFile.open("data.txt");
-	for (int i = 0; i <= *processes; i ++) {
+	for (int i = 0; i <= *processes; i++) {
 		getline(readFile, data)
 	}//end for loop
 	bool keepGoing = true;
+	bool keepReading = true;
+	int k = 0;
 	while (keepGoing) {
-		
+		for (int i = 0; i < *processes; i++) {
+                	k = 0;
+                	getline(readFile, data);
+                	for (int j = 0; j < *totalResources; j++) {
+                        	while (keepReading) {
+                        	        if (data[k] == ',') {
+                        	                totalRequest[i][j] = atoi(resource.c_str());
+                        	                resource = "";
+                        	                k++;
+                        	                keepReading = false;
+                        	        }//end if statement
+                        	        else if (k == data.length()) {
+                        	                resource += data[k];
+                        	                totalRequest[i][j] = atoi(resource.c_str());
+                        	                keepReading = false;
+                        	        }//end else if statement
+                        	        else if (data[k] != ',') {
+                        	                resource += data[k];
+                        	                k++;
+                        	        }//end else if statement
+                        	}//end while loop
+                        	keepReading = true;
+                	}//end for loop
+        	}//end for loop
+		for (int i = 0; i < *processes; i++) {
+			for (int j = 0; j < *totalResources; j++) {
+				allocate[j] = totalAllocation[i][j];
+				request[j] = totalRequest[i][j];
+			}//end for loop
+		}//end for loop
 	}//end while loop
 }//end loadRequests function
 
@@ -110,28 +182,30 @@ int main() {
 	int totalResources = 0;
 	int processes = 0;
 	int* available;
-	int** allocation;
+	int** totalAllocation;
 	int** totalRequest;
 	int* predict;
+	int* allocate;
 	int* request;
 	bool* finish;
 
 	loadData(&totalResources, &processes);
 
 	available = new int[totalResources];
-	allocation = new int*[processes];
+	totalAllocation = new int*[processes];
 	for (int i = 0; i < processes; i++) {
-		allocation[i] = new int[totalResources];
+		totalAllocation[i] = new int[totalResources];
 	}//end for loop
 	totalRequest = new int*[processes];
 	for (int i = 0; i < processes; i++) {
 		totalRequest[i] = new int[totalResources];
 	}//end for loop
 	predict = new int[totalResources];
+	allocate = new int[totalResources];
 	request = new int[totalResources];
 	finish = new bool[processes];
 
-	loadResources(&totalResources, &processes, available, allocation, request);
+	loadResources(&totalResources, &processes, available, totalAllocation, request);
 
 	cout << "Number of processes: " << processes << endl;
 	cout << "Number of resources: " << totalResources << endl;
@@ -143,7 +217,7 @@ int main() {
 	cout << "Resource Allocation: " << endl;
 	for (int i = 0; i < processes; i++) {
 		for (int j = 0; j < totalResources; j++) {
-			cout << allocation[i][j] << ", ";
+			cout << totalAllocation[i][j] << ", ";
 		}//end for loop
 		cout << endl;
 	}//end for loop
@@ -153,7 +227,7 @@ int main() {
 	}//end for loop
 	cout << endl;
 
-	loadRequests(&totalResources, &processes, available, allocation, totalRequest, predict, request, finish);
+	loadRequests(&totalResources, &processes, available, totalAllocation, totalRequest, predict, allocate, request, finish);
 
 	return 0;
 }//end main function
