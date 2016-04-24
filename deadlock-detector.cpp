@@ -141,6 +141,8 @@ void loadResources(int* totalResources, int* processes, int* available, int** al
 void deadlockDetect(int* totalResources, int* processes, int** totalAllocation, int** totalRequest, int* predict, int* allocate, int* request, bool* finish) {
 	bool keepGoing = true;
 	bool test;
+	int safeOrder = 0;
+	int* safeSequence = new int[*processes];
 	for (int i = 0; i < *processes; i++) {
 		for (int j = 0; j < *totalResources; j++) {
 			allocate[j] = totalAllocation[i][j];
@@ -159,6 +161,7 @@ void deadlockDetect(int* totalResources, int* processes, int** totalAllocation, 
 		while (finishCheck) {
 			if (process >= *processes) {
 				finishCheck = false;
+				process--;
 			}//end if statement
 			else if (finish[process] == false) {
 				test = isLessThan(totalResources, totalRequest[process], predict);
@@ -175,12 +178,23 @@ void deadlockDetect(int* totalResources, int* processes, int** totalAllocation, 
 		}//end while loop
 		if (test == true) {
 			for (int j = 0; j < *totalResources; j++) {
-				predict[j] = predict[j] + totalAllocation[process - 1][j];
+				predict[j] = predict[j] + totalAllocation[process][j];
 			}//end for loop
-			finish[process - 1] = true;
+			finish[process] = true;
+			safeSequence[safeOrder] = process;
+			safeOrder++;
+			if (safeOrder == *processes) {
+				keepGoing = false;
+				cout << "There is a safe sequence: ";
+				for (int i = 0; i < *processes; i++) {
+					cout << "P" << safeSequence[i] << ", ";
+				}//end for loop
+				cout << "Deadlock will NOT occur." << endl;
+			}//end if statement
 		}//end if statement
 		else if (test == false) {
 			keepGoing = false;
+			cout << "There is not a safe sequence. Deadlock will occur." << endl;
 		}//end else if statement
 	}//end while loop
 }//end deadlockDetect function
