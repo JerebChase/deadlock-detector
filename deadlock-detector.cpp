@@ -81,51 +81,27 @@ void loadData(int* totalResources, int* processes, int* counter) {
 //It also determines the inital allocation of resources to each process
 void loadResources(int* totalResources, int* processes, int* available, int** allocation, int* request) {
 	ifstream readFile;
+	stringstream readData;
 	string data;
-	string resource = "";
+	string resource;
 	readFile.open("data.txt");
 	getline(readFile, data, ';');
 	getline(readFile, data);
-	int position = 0;
-	for (int i = 0; i < data.length(); i++) {
-		if (data[i] == ',') {
-			available[position] = atoi(resource.c_str());
-			position++;
-			resource = "";
-		}//end if statement
-		else if (data[i] != ',') {
-			resource += data[i];
-		}//end else if statement
+	readData << data;
+	for (int i = 0; i < *totalResources; i++) {
+		getline(readData, resource, ',');
+		available[i] = atoi(resource.c_str());
 	}//end for loop
-	int length = data.length();
-	if (data[length] != ',') {
-		available[position] = atoi(resource.c_str());
-	}//end if statement
-	int k = 0;
-	bool keepGoing = true;
-	resource = "";
 	for (int i = 0; i < *processes; i++) {
-		k = 0;
 		getline(readFile, data);
+		cout << "Data: " << data << endl;
+		readData.clear();
+		readData.str("");
+		readData << data;
 		for (int j = 0; j < *totalResources; j++) {
-			while (keepGoing) {
-				if (data[k] == ',') {
-					allocation[i][j] = atoi(resource.c_str());
-					resource = "";
-					k++;
-					keepGoing = false;
-				}//end if statement
-				else if (k == data.length()) {
-					resource += data[k];
-					allocation[i][j] = atoi(resource.c_str());
-					keepGoing = false;
-				}//end else if statement
-				else if (data[k] != ',') {
-					resource += data[k];
-					k++;
-				}//end else if statement
-			}//end while loop
-			keepGoing = true;
+			getline(readData, resource, ',');
+			cout << "Resource: " << resource << endl;
+			allocation[i][j] = atoi(resource.c_str());
 		}//end for loop
 	}//end for loop
 	for (int i = 0; i < *processes; i++) {
@@ -200,38 +176,22 @@ void deadlockDetect(int* totalResources, int* processes, int** totalAllocation, 
 void loadRequests(int* totalResources, int* processes, int* counter, int* available, int** totalAllocation, int** totalRequest, int* predict, int* allocate, int* request, bool* finish) {
 	int repeat = 0;
 	ifstream readFile;
+	stringstream readData;
         string data;
-        string resource = "";
+        string resource;
         readFile.open("data.txt");
 	for (int i = 0; i <= *processes; i++) {
 		getline(readFile, data);
 	}//end for loop
-	bool keepGoing = true;
-	bool keepReading = true;
-	int k = 0;
 	while (repeat <= *counter) {
 		for (int i = 0; i < *processes; i++) {
-                	k = 0;
                 	getline(readFile, data);
+			readData.clear();
+			readData.str("");
+			readData << data;
                 	for (int j = 0; j < *totalResources; j++) {
-                        	while (keepReading) {
-                        	        if (data[k] == ',') {
-                        	                totalRequest[i][j] = atoi(resource.c_str());
-                        	                resource = "";
-                        	                k++;
-                        	                keepReading = false;
-                        	        }//end if statement
-                        	        else if (k == data.length()) {
-                        	                resource += data[k];
-                        	                totalRequest[i][j] = atoi(resource.c_str());
-                        	                keepReading = false;
-                        	        }//end else if statement
-                        	        else if (data[k] != ',') {
-                        	                resource += data[k];
-                        	                k++;
-                        	        }//end else if statement
-                        	}//end while loop
-                        	keepReading = true;
+				getline(readData, resource, ',');
+				totalRequest[i][j] = atoi(resource.c_str());
                 	}//end for loop
         	}//end for loop
 		for (int i = 0; i < *totalResources; i++) {
@@ -269,7 +229,7 @@ int main() {
 	allocate = new int[totalResources];
 	request = new int[totalResources];
 	finish = new bool[processes];
-	counter = counter / processes;
+	counter = (counter / processes) - 1;
 
 	loadResources(&totalResources, &processes, available, totalAllocation, request);
 
