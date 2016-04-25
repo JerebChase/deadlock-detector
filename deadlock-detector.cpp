@@ -60,10 +60,8 @@ void loadData(int* totalResources, int* processes, int* counter) {
 	string data;
 	readFile.open("data.txt");
 	getline(readFile, data, ';');
-	*counter = *counter + 1;
 	*processes = atoi(data.c_str());
 	getline(readFile, data);
-	*counter = *counter + 1;
 	for (int i = 0; i < data.length(); i++) {
 		if (data[i] == ',') {
 			*totalResources = *totalResources + 1;
@@ -206,12 +204,12 @@ void loadRequests(int* totalResources, int* processes, int* counter, int* availa
         string resource = "";
         readFile.open("data.txt");
 	for (int i = 0; i <= *processes; i++) {
-		getline(readFile, data)
+		getline(readFile, data);
 	}//end for loop
 	bool keepGoing = true;
 	bool keepReading = true;
 	int k = 0;
-	while (repeat <= counter) {
+	while (repeat <= *counter) {
 		for (int i = 0; i < *processes; i++) {
                 	k = 0;
                 	getline(readFile, data);
@@ -239,7 +237,7 @@ void loadRequests(int* totalResources, int* processes, int* counter, int* availa
 		for (int i = 0; i < *totalResources; i++) {
 			predict[i] = available[i];
 		}//end for loop
-		deadlockDetect(totalResources, processes, totalAllocation, totalRequest, predict, allocate, request, finish)
+		deadlockDetect(totalResources, processes, totalAllocation, totalRequest, predict, allocate, request, finish);
 		repeat++;
 	}//end while loop
 }//end loadRequests function
