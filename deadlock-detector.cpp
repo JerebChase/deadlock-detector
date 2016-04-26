@@ -183,7 +183,7 @@ void loadRequests(int* totalResources, int* processes, int* counter, int* availa
 	for (int i = 0; i <= *processes; i++) {
 		getline(readFile, data);
 	}//end for loop
-	while (repeat <= *counter) {
+	while (repeat < *counter) {
 		for (int i = 0; i < *processes; i++) {
                 	getline(readFile, data);
 			readData.clear();
@@ -198,6 +198,18 @@ void loadRequests(int* totalResources, int* processes, int* counter, int* availa
 			predict[i] = available[i];
 		}//end for loop
 		deadlockDetect(totalResources, processes, totalAllocation, totalRequest, predict, allocate, request, finish);
+		cout << "Resource Request: " << endl;
+        	for (int i = 0; i < *processes; i++) {
+        	        for (int j = 0; j < *totalResources; j++) {
+        	                cout << totalRequest[i][j] << ", ";
+        	        }//end for loop
+        	        cout << endl;
+        	}//end for loop
+        	cout << "Available Resources: " << endl;
+        	for (int i = 0; i < *totalResources; i++) {
+        	        cout << available[i] << ", ";
+        	}//end for loop
+        	cout << endl;
 		repeat++;
 	}//end while loop
 }//end loadRequests function
