@@ -173,6 +173,46 @@ void deadlockDetect(int* totalResources, int* processes, int** totalAllocation, 
 	}//end while loop
 }//end deadlockDetect function
 
+bool preempt(int* totalResources, int* processes, int** totalAllocation, int** totalRequest, int* predict, int relinquish, int process) {
+	bool keepGoing = true;
+	bool test;
+	cout << "P" << process << " needs more resources" << endl;
+	while (keepGoing) {
+		bool check = true;
+		while (check) {
+			if (relinquish == *processes) {
+				check = false;
+			}//end if statement
+			else if (finish[relinquish] == true) {
+				relinquish++;
+			}//end if statement
+			else if (relinquish == process) {
+				relinquish++;
+			}//end if statement
+			else {
+				check = false;
+			}//end else statement
+		}//end while loop
+		cout << "Release P" << relinquish << "'s resources" << endl;
+		for (int i = 0; i < *totalResources; i++) {
+			predict[i] += totalAllocation[relinquish][i];
+			cout << predict[i] << " | ";
+			totalRequest[relinquish][i] += totalAllocation[relinquish][i];
+			cout << totalRequest[relinquish][i] << " | ";
+			totalAllocation[relinquish][i] = 0;
+			cout << totalAllocation[relinquish][i] << endl;
+		}//end for loop
+		test = isLessThan(totalResources, totalRequest[process], predict);
+		if (test == true) {
+			keepGoing = false;
+		}//end if statement
+		else if (test == false) {
+			relinquish++;
+		}//end else if statement
+	}//end while loop
+	return test;
+}//end preempt function
+
 void deadlockDetectTwo(int* totalResources, int* processes, int** totalAllocation, int** totalRequest, int* predict, int* allocate, int* request, bool* finish) {
 	bool keepGoing = true;
 	bool test;
@@ -200,26 +240,14 @@ void deadlockDetectTwo(int* totalResources, int* processes, int** totalAllocatio
 				test = isLessThan(totalResources, totalRequest[process], predict);
 				if (test == false) {
 					preempt++;
-					cout << endl;
-					cout << "PREEMPT!!!!!! " << preempt << endl;
-					cout << endl;
 					if (preempt == 3) {
-						cout << "P" << process << " needs more resources" << endl;
-						relinquish = (process + 4) % *processes;
-						cout << "Release P" << relinquish << "'s resources" << endl;
-						for (int i = 0; i < *totalResources; i++) {
-							predict[i] += totalAllocation[relinquish][i];
-							cout << predict[i] << " | ";
-							totalRequest[relinquish][i] += totalAllocation[relinquish][i];
-							cout << totalRequest[relinquish][i] << " | ";
-							totalAllocation[relinquish][i] = 0;
-							cout << totalAllocation[relinquish][i] << endl;
-						}//end for loop
-						//test = isLessThan(totalResources, totalRequest[process], predict);
+						relinquish = 0;
+						test = preempt(totalResources, processes, totalAllocation, totalRequest, predict, relinquish, process);
 						preempt = 0;
+						finishCheck = false;
 					}//end if statement
 					else {
-						process = (process++) % 6;
+						process = (process + 1) % 6;
 					}//end else statement
 				}//end if statement
 				else if (test == true) {
@@ -228,7 +256,7 @@ void deadlockDetectTwo(int* totalResources, int* processes, int** totalAllocatio
 				}//end else if statement
 			}//end if statement
 			else if (finish[process] == true) {
-				process = (process++) % 6;
+				process = (process + 1) % 6;
 			}//end else if statement
 		}//end while loop
 		if (test == true) {
