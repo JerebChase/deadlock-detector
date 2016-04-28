@@ -1,3 +1,4 @@
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <iostream>
@@ -7,6 +8,8 @@
 
 using namespace std;
 
+//This function checks to see if the request for resources by a process
+//is less than the total available resources
 bool isLessThan(int* totalResources, int* request, int* predict) {
 	bool keepGoing = true;
 	bool isLess = true;
@@ -26,6 +29,9 @@ bool isLessThan(int* totalResources, int* request, int* predict) {
 	return isLess;
 }//end isLessThan function
 
+//Checks to see if a process has finished
+//By summing the resources and seeing if they equal zero
+//Returns true if process is finished and false if not
 bool isFinished(int* totalResources, int* allocate) {
 	bool keepGoing = true;
 	bool isZero = true;
@@ -46,6 +52,15 @@ bool isFinished(int* totalResources, int* allocate) {
 	}//end while loop
 	return isZero;
 }//end isFinished function
+
+//Copies the data from one matrix to another
+void copyMatrix(int* totalResources, int* processes, int** originalMatrix, int** copiedMatrix) {
+	for (int i = 0; i < *processes; i++) {
+		for (int j = 0; j < *totalResources; j++) {
+			copiedMatrix[i][j] = originalMatrix[i][j];
+		}//end for loop
+	}//end for loop
+}//end copyMatrix function
 
 void updateAvailable(int* totalResources, int* available, int* request) {
 	for (int i = 0; i < *totalResources; i++) {
@@ -75,6 +90,7 @@ void loadData(int* totalResources, int* processes, int* counter) {
 		getline(readFile, data);
 		*counter = *counter + 1;
 	}//end while loop
+	readFile.close();
 }//end loadData function
 
 //This function determines the amount of each resource available
@@ -94,13 +110,11 @@ void loadResources(int* totalResources, int* processes, int* available, int** al
 	}//end for loop
 	for (int i = 0; i < *processes; i++) {
 		getline(readFile, data);
-		cout << "Data: " << data << endl;
 		readData.clear();
 		readData.str("");
 		readData << data;
 		for (int j = 0; j < *totalResources; j++) {
 			getline(readData, resource, ',');
-			cout << "Resource: " << resource << endl;
 			allocation[i][j] = atoi(resource.c_str());
 		}//end for loop
 	}//end for loop
@@ -110,8 +124,10 @@ void loadResources(int* totalResources, int* processes, int* available, int** al
 		}//end for loop
 		updateAvailable(totalResources, available, request);
 	}//end for loop
+	readFile.close();
 }//end loadResources function
 
+//This deadlock detection algorithm does not preempt resources
 void deadlockDetect(int* totalResources, int* processes, int** totalAllocation, int** totalRequest, int* predict, int* allocate, int* request, bool* finish) {
 	bool keepGoing = true;
 	bool test;
@@ -171,9 +187,11 @@ void deadlockDetect(int* totalResources, int* processes, int** totalAllocation, 
 			cout << "There is not a safe sequence. Deadlock will occur." << endl;
 		}//end else if statement
 	}//end while loop
+	delete safeSequence;
 }//end deadlockDetect function
 
-bool preempt(int* totalResources, int* processes, int** totalAllocation, int** totalRequest, int* predict, int relinquish, int process) {
+//This function preempts resources from processes after three consecutive no responses to resource requests 
+bool preempt(int* totalResources, int* processes, int** copyAllocation, int** totalRequest, int* predict, bool* finish, int relinquish, int process) {
 	bool keepGoing = true;
 	bool test;
 	cout << "P" << process << " needs more resources" << endl;
@@ -193,33 +211,45 @@ bool preempt(int* totalResources, int* processes, int** totalAllocation, int** t
 				check = false;
 			}//end else statement
 		}//end while loop
-		cout << "Release P" << relinquish << "'s resources" << endl;
-		for (int i = 0; i < *totalResources; i++) {
-			predict[i] += totalAllocation[relinquish][i];
-			cout << predict[i] << " | ";
-			totalRequest[relinquish][i] += totalAllocation[relinquish][i];
-			cout << totalRequest[relinquish][i] << " | ";
-			totalAllocation[relinquish][i] = 0;
-			cout << totalAllocation[relinquish][i] << endl;
-		}//end for loop
-		test = isLessThan(totalResources, totalRequest[process], predict);
-		if (test == true) {
-			keepGoing = false;
+		if (relinquish < *processes) {
+			cout << "Release P" << relinquish << "'s resources" << endl;
+			for (int i = 0; i < *totalResources; i++) {
+				predict[i] += copyAllocation[relinquish][i];
+				totalRequest[relinquish][i] += copyAllocation[relinquish][i];
+				copyAllocation[relinquish][i] = 0;
+			}//end for loop
+			test = isLessThan(totalResources, totalRequest[process], predict);
+			if (test == true) {
+				keepGoing = false;
+			}//end if statement
+			else if (test == false) {
+				relinquish++;
+			}//end else if statement
 		}//end if statement
-		else if (test == false) {
-			relinquish++;
-		}//end else if statement
+		else {
+			test = false;
+			cout << "There are no processes whose resources can be released." << endl;
+			keepGoing = false;
+		}//end else statement
 	}//end while loop
 	return test;
 }//end preempt function
 
-void deadlockDetectTwo(int* totalResources, int* processes, int** totalAllocation, int** totalRequest, int* predict, int* allocate, int* request, bool* finish) {
+//This deadlock detection function includes preemption of resources
+void deadlockDetectTwo(int* totalResources, int* processes, int** totalAllocation, int** totalRequest, int* available, int* predict, int* allocate, int* request, bool* finish) {
 	bool keepGoing = true;
 	bool test;
 	int safeOrder = 0;
-	int preempt = 0;
+	int preemptTest = 0;
 	int relinquish;
 	int* safeSequence = new int[*processes];
+	int** copyAllocation = new int*[*processes];
+	for (int i = 0; i < *processes; i++) {
+		copyAllocation[i] = new int[*totalResources];
+	}//end for loop
+	for (int i = 0; i < *totalResources; i++) {
+                predict[i] = available[i];
+        }//end for loop
 	for (int i = 0; i < *processes; i++) {
 		for (int j = 0; j < *totalResources; j++) {
 			allocate[j] = totalAllocation[i][j];
@@ -232,6 +262,7 @@ void deadlockDetectTwo(int* totalResources, int* processes, int** totalAllocatio
 			finish[i] = true;
 		}//end else if statement
 	}//end for loop
+	copyMatrix(totalResources, processes, totalAllocation, copyAllocation);
 	while (keepGoing) {
 		bool finishCheck = true;
 		int process = 0;
@@ -239,11 +270,14 @@ void deadlockDetectTwo(int* totalResources, int* processes, int** totalAllocatio
 			if (finish[process] == false) {
 				test = isLessThan(totalResources, totalRequest[process], predict);
 				if (test == false) {
-					preempt++;
-					if (preempt == 3) {
+					preemptTest++;
+					if (preemptTest == 3) {
 						relinquish = 0;
-						test = preempt(totalResources, processes, totalAllocation, totalRequest, predict, relinquish, process);
-						preempt = 0;
+						test = preempt(totalResources, processes, copyAllocation, totalRequest, predict, finish, relinquish, process);
+						preemptTest = 0;
+						if (test == false) {
+							copyMatrix(totalResources, processes, totalAllocation, copyAllocation);
+						}//end else if statement
 						finishCheck = false;
 					}//end if statement
 					else {
@@ -251,7 +285,7 @@ void deadlockDetectTwo(int* totalResources, int* processes, int** totalAllocatio
 					}//end else statement
 				}//end if statement
 				else if (test == true) {
-					preempt = 0;
+					preemptTest = 0;
 					finishCheck = false;
 				}//end else if statement
 			}//end if statement
@@ -261,7 +295,7 @@ void deadlockDetectTwo(int* totalResources, int* processes, int** totalAllocatio
 		}//end while loop
 		if (test == true) {
 			for (int j = 0; j < *totalResources; j++) {
-				predict[j] = predict[j] + totalAllocation[process][j];
+				predict[j] = predict[j] + copyAllocation[process][j];
 			}//end for loop
 			finish[process] = true;
 			safeSequence[safeOrder] = process;
@@ -280,8 +314,17 @@ void deadlockDetectTwo(int* totalResources, int* processes, int** totalAllocatio
 			cout << "There is not a safe sequence. Deadlock will occur." << endl;
 		}//end else if statement
 	}//end while loop
+	for (int i = 0; i < *processes; i++) {
+		delete copyAllocation[i];
+	}//end for loop
+	delete copyAllocation;
+	delete safeSequence;
 }//end deadlockDetectTwo function
 
+//This function loads the resource requests and calls the deadlock detection function
+//The deadlock detection function with preemption is the default
+//To run without preemption, un-comment the deadlockDetect function call
+//And comment the deadlockDetectTwo function call
 void loadRequests(int* totalResources, int* processes, int* counter, int* available, int** totalAllocation, int** totalRequest, int* predict, int* allocate, int* request, bool* finish) {
 	int repeat = 0;
 	ifstream readFile;
@@ -306,21 +349,23 @@ void loadRequests(int* totalResources, int* processes, int* counter, int* availa
 		for (int i = 0; i < *totalResources; i++) {
 			predict[i] = available[i];
 		}//end for loop
-		deadlockDetectTwo(totalResources, processes, totalAllocation, totalRequest, predict, allocate, request, finish);
 		cout << "Resource Request: " << endl;
-        	for (int i = 0; i < *processes; i++) {
-        	        for (int j = 0; j < *totalResources; j++) {
-        	                cout << totalRequest[i][j] << ", ";
-        	        }//end for loop
-        	        cout << endl;
-        	}//end for loop
-        	cout << "Available Resources: " << endl;
-        	for (int i = 0; i < *totalResources; i++) {
-        	        cout << available[i] << ", ";
-        	}//end for loop
-        	cout << endl;
+                for (int i = 0; i < *processes; i++) {
+                        for (int j = 0; j < *totalResources; j++) {
+                                cout << totalRequest[i][j] << ", ";
+                        }//end for loop
+                        cout << endl;
+                }//end for loop
+                cout << "Available Resources: " << endl;
+                for (int i = 0; i < *totalResources; i++) {
+                        cout << available[i] << ", ";
+                }//end for loop
+                cout << endl;
+		//deadlockDetect(totalResources, processes, totalAllocation, totalRequest, predict, allocate, request, finish);
+		deadlockDetectTwo(totalResources, processes, totalAllocation, totalRequest, available, predict, allocate, request, finish);
 		repeat++;
 	}//end while loop
+	readFile.close();
 }//end loadRequests function
 
 int main() {
@@ -368,13 +413,19 @@ int main() {
 		}//end for loop
 		cout << endl;
 	}//end for loop
-	cout << "Available Resources: " << endl;
-        for (int i = 0; i < totalResources; i++) {
-                cout << available[i] << ", ";
-	}//end for loop
-	cout << endl;
 
 	loadRequests(&totalResources, &processes, &counter, available, totalAllocation, totalRequest, predict, allocate, request, finish);
-
+	
+	for (int i = 0; i < processes; i++) {
+		delete totalAllocation[i];
+		delete totalRequest[i];
+	}//end for loop
+	delete totalAllocation;
+	delete totalRequest;
+	delete available;
+	delete predict;
+        delete allocate;
+        delete request;
+        delete finish;
 	return 0;
 }//end main function
