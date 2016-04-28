@@ -1,3 +1,16 @@
+/*Jeremy Brown
+ *04-27-2016
+ *
+ *This program simulates deadlock detetion in an operating system using the Banker's Algorithm.
+ *Resource requests are read in from a file data.txt. Please note that this file has been modified
+ *so as to standardize it. Commas were deleted after resource request lines. Please use the data.txt
+ *file submitted with the assignment to ensure that the program runs smoothly. Matrices representing 
+ *total resource allocation and resource requests are used to determine whether or not a process can
+ *run. If there are no processes requesting resources, but there are not enough resources available,
+ *a different process will try to run. If the algorithm finds that three consecutive times, processes
+ *were denied due to lack of resources, it will try to find a process which can release its resources.
+ *If there is no such process, the system is in a deadlocked state.
+ */
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -29,8 +42,7 @@ bool isLessThan(int* totalResources, int* request, int* predict) {
 	return isLess;
 }//end isLessThan function
 
-//Checks to see if a process has finished
-//By summing the resources and seeing if they equal zero
+//Checks to see if a process has finished by summing the resources and seeing if they equal zero
 //Returns true if process is finished and false if not
 bool isFinished(int* totalResources, int* allocate) {
 	bool keepGoing = true;
